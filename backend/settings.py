@@ -2,6 +2,7 @@ from pathlib import Path
 import os
 
 from dotenv import load_dotenv
+import dj_database_url
 
 
 # ============================================================
@@ -22,15 +23,28 @@ load_dotenv(BASE_DIR / ".env")
 # SECURITY
 # ============================================================
 
-SECRET_KEY = "django-insecure-style-mirror-development-key"
+SECRET_KEY = os.getenv(
+    "SECRET_KEY",
+    "django-insecure-style-mirror-development-key"
+)
 
-DEBUG = True
+DEBUG = os.getenv("DEBUG", "True").lower() == "true"
+
 
 ALLOWED_HOSTS = [
     "127.0.0.1",
     "localhost",
     "10.230.208.35",
 ]
+
+
+# Add Render's automatically provided hostname
+RENDER_EXTERNAL_HOSTNAME = os.getenv(
+    "RENDER_EXTERNAL_HOSTNAME"
+)
+
+if RENDER_EXTERNAL_HOSTNAME:
+    ALLOWED_HOSTS.append(RENDER_EXTERNAL_HOSTNAME)
 
 
 # ============================================================
@@ -62,6 +76,9 @@ INSTALLED_APPS = [
 MIDDLEWARE = [
 
     "django.middleware.security.SecurityMiddleware",
+
+    # WhiteNoise
+    "whitenoise.middleware.WhiteNoiseMiddleware",
 
     "django.contrib.sessions.middleware.SessionMiddleware",
 
@@ -130,17 +147,36 @@ WSGI_APPLICATION = "backend.wsgi.application"
 # DATABASE
 # ============================================================
 
-DATABASES = {
+DATABASE_URL = os.getenv("DATABASE_URL")
 
-    "default": {
 
-        "ENGINE": "django.db.backends.sqlite3",
+if DATABASE_URL:
 
-        "NAME": BASE_DIR / "db.sqlite3",
+    DATABASES = {
+
+        "default": dj_database_url.parse(
+            DATABASE_URL,
+            conn_max_age=600,
+        )
 
     }
 
-}
+else:
+
+    # Local development database
+    DATABASES = {
+
+        "default": {
+
+            "ENGINE":
+                "django.db.backends.sqlite3",
+
+            "NAME":
+                BASE_DIR / "db.sqlite3",
+
+        }
+
+    }
 
 
 # ============================================================
@@ -189,7 +225,15 @@ USE_TZ = True
 # STATIC FILES
 # ============================================================
 
-STATIC_URL = "static/"
+STATIC_URL = "/static/"
+
+STATIC_ROOT = BASE_DIR / "staticfiles"
+
+
+# WhiteNoise static file configuration
+STATICFILES_STORAGE = (
+    "whitenoise.storage.CompressedManifestStaticFilesStorage"
+)
 
 
 # ============================================================
@@ -233,8 +277,18 @@ SUPABASE_URL = os.getenv(
 
 
 # ============================================================
-# DEVELOPMENT SETTINGS
+# PRODUCTION SECURITY
 # ============================================================
 
-# Allow Django to serve uploaded media files during development.
-# The actual URL configuration is handled in backend/urls.py.
+if not DEBUG:
+
+    SECURE_PROXY_SSL_HEADER = (
+        "HTTP_X_FORWARDED_PROTO",
+        "https",
+    )
+
+    SESSION_COOKIE_SECURE = True
+
+    CSRF_COOKIE_SECURE = True
+
+    SECURE_SSL_REDIRECT = True
