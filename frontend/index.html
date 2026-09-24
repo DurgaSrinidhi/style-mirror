@@ -1,0 +1,251 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>STYLE MIRROR</title>
+
+    <link rel="stylesheet" href="style.css">
+</head>
+
+<body>
+
+    <header class="navbar">
+        <div class="logo">STYLE MIRROR</div>
+
+        <nav>
+            <a href="#home">Home</a>
+            <a href="#history">History</a>
+        </nav>
+    </header>
+
+
+    <main>
+
+        <!-- HOME -->
+
+        <section id="home" class="hero">
+
+            <h1>STYLE MIRROR</h1>
+
+            <p class="subtitle">
+                AI-Powered Aesthetic Matching Editor
+            </p>
+
+            <p class="description">
+                Upload a reference image and apply its visual style
+                to your own photo.
+            </p>
+
+
+            <div class="upload-container">
+
+                <!-- Reference Image -->
+
+                <div class="upload-card">
+
+                    <h2>1. Reference Image</h2>
+
+                    <p>
+                        Upload the image whose aesthetic you want to copy.
+                    </p>
+
+                    <input
+                        type="file"
+                        id="referenceImage"
+                        accept="image/*"
+                    >
+
+                    <img
+                        id="referencePreview"
+                        class="preview"
+                        alt="Reference preview"
+                    >
+
+                </div>
+
+
+                <!-- Original Image -->
+
+                <div class="upload-card">
+
+                    <h2>2. Your Photo</h2>
+
+                    <p>
+                        Upload the photo you want to edit.
+                    </p>
+
+                    <input
+                        type="file"
+                        id="originalImage"
+                        accept="image/*"
+                    >
+
+                    <img
+                        id="originalPreview"
+                        class="preview"
+                        alt="Original preview"
+                    >
+
+                </div>
+
+            </div>
+
+
+            <button
+                id="generateButton"
+                class="primary-button"
+            >
+                GENERATE STYLE
+            </button>
+
+
+            <div id="status" class="status"></div>
+
+        </section>
+
+
+        <!-- RESULT -->
+
+        <section id="result" class="result-section">
+
+            <h2>Your STYLE MIRROR Result</h2>
+
+            <div class="result-container">
+
+                <div class="result-card">
+
+                    <h3>Original</h3>
+
+                    <img
+                        id="originalResult"
+                        class="result-image"
+                        alt="Original image"
+                    >
+
+                </div>
+
+
+                <div class="arrow">
+                    →
+                </div>
+
+
+                <div class="result-card">
+
+                    <h3>Edited</h3>
+
+                    <img
+                        id="editedResult"
+                        class="result-image"
+                        alt="Edited image"
+                    >
+
+                </div>
+
+            </div>
+
+
+            <!-- AI STYLE PROFILE -->
+
+            <div class="style-profile">
+
+                <h2>AI Style Profile</h2>
+
+                <div class="parameters">
+
+                    <div>
+                        <span>Lightness</span>
+                        <strong id="lightness">-</strong>
+                    </div>
+
+                    <div>
+                        <span>Contrast</span>
+                        <strong id="contrast">-</strong>
+                    </div>
+
+                    <div>
+                        <span>Warmth</span>
+                        <strong id="warmth">-</strong>
+                    </div>
+
+                    <div>
+                        <span>Saturation</span>
+                        <strong id="saturation">-</strong>
+                    </div>
+
+                    <div>
+                        <span>Highlights</span>
+                        <strong id="highlight">-</strong>
+                    </div>
+
+                    <div>
+                        <span>Shadows</span>
+                        <strong id="shadow">-</strong>
+                    </div>
+
+                    <div>
+                        <span>Hue</span>
+                        <strong id="hue">-</strong>
+                    </div>
+
+                    <div>
+                        <span>Sharpness</span>
+                        <strong id="sharpen">-</strong>
+                    </div>
+
+                </div>
+
+            </div>
+
+
+            <div class="actions">
+
+                <button
+                    id="regenerateButton"
+                    class="secondary-button"
+                >
+                    REGENERATE
+                </button>
+
+                <button
+                    id="exportButton"
+                    class="primary-button"
+                >
+                    EXPORT
+                </button>
+
+            </div>
+
+        </section>
+
+
+        <!-- HISTORY -->
+
+        <section id="history" class="history-section">
+
+            <h2>Project History</h2>
+
+            <div id="historyContainer">
+                <p>No projects loaded yet.</p>
+            </div>
+
+        </section>
+
+    </main>
+
+
+    <footer>
+
+        <p>
+            STYLE MIRROR — AI Aesthetic Matching Editor
+        </p>
+
+    </footer>
+
+
+    <script src="script.js"></script>
+
+</body>
+</html>

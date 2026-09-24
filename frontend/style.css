@@ -1,0 +1,254 @@
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    font-family: Arial, sans-serif;
+    background: #f7f4f8;
+    color: #29232b;
+}
+
+.navbar {
+    height: 70px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0 8%;
+    background: white;
+    border-bottom: 1px solid #eee;
+}
+
+.logo {
+    font-size: 22px;
+    font-weight: 700;
+    letter-spacing: 2px;
+}
+
+nav {
+    display: flex;
+    gap: 30px;
+}
+
+nav a {
+    text-decoration: none;
+    color: #333;
+    font-size: 15px;
+}
+
+.hero {
+    min-height: 650px;
+    padding: 80px 8%;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 60px;
+    align-items: center;
+}
+
+.tagline {
+    font-size: 13px;
+    letter-spacing: 3px;
+    color: #8d648c;
+    font-weight: bold;
+}
+
+.hero h1 {
+    font-size: 55px;
+    line-height: 1.1;
+    margin: 20px 0;
+}
+
+.hero h1 span {
+    display: block;
+    color: #9b6d98;
+}
+
+.description {
+    font-size: 18px;
+    line-height: 1.7;
+    color: #666;
+    max-width: 550px;
+}
+
+.editor-card {
+    background: white;
+    padding: 35px;
+    border-radius: 24px;
+    box-shadow: 0 15px 40px rgba(0,0,0,0.08);
+}
+
+.upload-section {
+    padding: 20px 0;
+    border-bottom: 1px solid #eee;
+}
+
+.upload-section h2 {
+    font-size: 18px;
+    margin-bottom: 8px;
+}
+
+.upload-section p {
+    color: #777;
+    margin-bottom: 15px;
+}
+
+input[type="file"] {
+    width: 100%;
+    padding: 15px;
+    border: 2px dashed #c9a9c7;
+    border-radius: 12px;
+}
+
+button {
+    border: none;
+    cursor: pointer;
+    background: #9b6d98;
+    color: white;
+    padding: 15px 25px;
+    border-radius: 12px;
+    font-weight: bold;
+    letter-spacing: 1px;
+}
+
+#generateButton {
+    width: 100%;
+    margin-top: 25px;
+}
+
+button:hover {
+    opacity: 0.9;
+}
+
+#status {
+    text-align: center;
+    margin-top: 15px;
+    color: #777;
+}
+
+.result-section,
+.history-section {
+    padding: 70px 8%;
+    background: white;
+}
+
+.result-section h2,
+.history-section h2 {
+    text-align: center;
+    margin-bottom: 40px;
+}
+
+.images-container {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 30px;
+}
+
+.image-card {
+    width: 350px;
+    text-align: center;
+}
+
+.image-card h3 {
+    margin-bottom: 15px;
+}
+
+.image-card img {
+    width: 100%;
+    height: 350px;
+    object-fit: cover;
+    border-radius: 18px;
+    background: #eee;
+}
+
+.arrow {
+    font-size: 40px;
+    color: #9b6d98;
+}
+
+.style-card {
+    max-width: 800px;
+    margin: 50px auto 0;
+    padding: 35px;
+    background: #f7f4f8;
+    border-radius: 20px;
+}
+
+.style-card h2 {
+    margin-bottom: 25px;
+}
+
+.parameters {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 15px;
+}
+
+.parameters div {
+    background: white;
+    padding: 20px;
+    border-radius: 12px;
+}
+
+.parameters span {
+    display: block;
+    color: #777;
+    margin-bottom: 8px;
+}
+
+.parameters strong {
+    font-size: 20px;
+}
+
+.buttons {
+    display: flex;
+    gap: 15px;
+    margin-top: 25px;
+}
+
+.buttons button {
+    flex: 1;
+}
+
+.history-section {
+    background: #f7f4f8;
+}
+
+#historyContainer {
+    max-width: 900px;
+    margin: auto;
+}
+
+.history-item {
+    background: white;
+    padding: 25px;
+    border-radius: 15px;
+    margin-bottom: 15px;
+}
+
+footer {
+    text-align: center;
+    padding: 30px;
+    background: #29232b;
+    color: white;
+}
+
+@media (max-width: 800px) {
+
+    .hero {
+        grid-template-columns: 1fr;
+    }
+
+    .hero h1 {
+        font-size: 40px;
+    }
+
+    .images-container {
+        flex-direction: column;
+    }
+
+    .parameters {
+        grid-template-columns: 1fr 1fr;
+    }
+}

@@ -1,0 +1,622 @@
+{% load static %}
+
+<!DOCTYPE html>
+
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+```
+<title>STYLE MIRROR — AI Aesthetic Editor</title>
+
+<link rel="stylesheet" href="{% static 'style_mirror/style.css' %}">
+
+<!-- Supabase JavaScript -->
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+```
+
+</head>
+
+<body>
+
+```
+<!-- =========================
+     LOGIN / SIGN UP SCREEN
+========================== -->
+
+<div id="authScreen" class="auth-screen">
+
+    <div class="auth-card">
+
+        <div class="auth-logo">
+            <div class="brand-icon">✦</div>
+            <h1>STYLE MIRROR</h1>
+        </div>
+
+        <p class="auth-subtitle">
+            AI Aesthetic Matching Editor
+        </p>
+
+        <div class="auth-tabs">
+
+            <button
+                id="loginTab"
+                class="auth-tab active"
+                type="button">
+                Login
+            </button>
+
+            <button
+                id="signupTab"
+                class="auth-tab"
+                type="button">
+                Sign Up
+            </button>
+
+        </div>
+
+        <form id="authForm">
+
+            <div
+                id="nameGroup"
+                class="input-group hidden">
+
+                <label for="authName">
+                    Name
+                </label>
+
+                <input
+                    type="text"
+                    id="authName"
+                    placeholder="Enter your name">
+            </div>
+
+            <div class="input-group">
+
+                <label for="authEmail">
+                    Email
+                </label>
+
+                <input
+                    type="email"
+                    id="authEmail"
+                    placeholder="Enter your email"
+                    required>
+            </div>
+
+            <div class="input-group">
+
+                <label for="authPassword">
+                    Password
+                </label>
+
+                <input
+                    type="password"
+                    id="authPassword"
+                    placeholder="Enter your password"
+                    required>
+            </div>
+
+            <button
+                type="submit"
+                id="authButton"
+                class="auth-button">
+                Login
+            </button>
+
+            <p
+                id="authMessage"
+                class="auth-message">
+            </p>
+
+        </form>
+
+    </div>
+
+</div>
+
+
+<!-- =========================
+     MAIN APPLICATION
+========================== -->
+
+<div id="appContent">
+
+    <!-- NAVBAR -->
+
+    <nav class="navbar">
+
+        <div class="brand">
+
+            <div class="brand-icon">
+                ✦
+            </div>
+
+            <div>
+                <h2>STYLE MIRROR</h2>
+                <span>AI Aesthetic Editor</span>
+            </div>
+
+        </div>
+
+        <div class="nav-links">
+
+            <a href="#editor">
+                Editor
+            </a>
+
+            <a href="#history">
+                History
+            </a>
+
+            <button
+                id="logoutButton"
+                class="logout-button">
+                Logout
+            </button>
+
+        </div>
+
+    </nav>
+
+
+    <!-- HERO -->
+
+    <section class="hero">
+
+        <div class="hero-text">
+
+            <div class="badge">
+                ✦ AI POWERED EDITING
+            </div>
+
+            <h1>
+                Your style.<br>
+                <span>Mirrored.</span>
+            </h1>
+
+            <p>
+                Upload a reference image and let STYLE MIRROR
+                understand its colors, lighting, contrast and
+                overall aesthetic.
+            </p>
+
+            <a
+                href="#editor"
+                class="hero-button">
+                Start Creating
+                <span>→</span>
+            </a>
+
+        </div>
+
+
+        <div class="hero-preview">
+
+            <div class="preview-glow"></div>
+
+            <div class="preview-main">
+
+                <div class="preview-placeholder">
+
+                    <div class="preview-symbol">
+                        ✦
+                    </div>
+
+                    <strong>
+                        STYLE MIRROR
+                    </strong>
+
+                    <span>
+                        Your aesthetic, recreated.
+                    </span>
+
+                </div>
+
+            </div>
+
+            <div class="floating-card card-one">
+                <span>COLOR</span>
+                <strong>Matched</strong>
+            </div>
+
+            <div class="floating-card card-two">
+                <span>AI STYLE</span>
+                <strong>Applied</strong>
+            </div>
+
+        </div>
+
+    </section>
+
+
+    <!-- EDITOR -->
+
+    <main
+        id="editor"
+        class="main-container">
+
+        <div class="editor-header">
+
+            <div>
+
+                <span class="section-label">
+                    CREATE
+                </span>
+
+                <h2>
+                    Mirror an aesthetic
+                </h2>
+
+                <p>
+                    Give STYLE MIRROR two images and
+                    we'll do the rest.
+                </p>
+
+            </div>
+
+        </div>
+
+
+        <!-- UPLOAD CARDS -->
+
+        <div class="upload-grid">
+
+            <!-- REFERENCE -->
+
+            <div class="upload-card featured">
+
+                <div class="upload-number">
+                    01
+                </div>
+
+                <div class="upload-icon">
+                    ✦
+                </div>
+
+                <h3>
+                    Reference Image
+                </h3>
+
+                <p>
+                    Upload the image whose aesthetic
+                    you want to recreate.
+                </p>
+
+                <label
+                    for="referenceImage"
+                    class="upload-button">
+                    Choose Image
+                </label>
+
+                <input
+                    type="file"
+                    id="referenceImage"
+                    accept="image/*"
+                    hidden>
+
+                <div
+                    id="referenceFileName"
+                    class="file-name">
+                    No image selected
+                </div>
+
+            </div>
+
+
+            <!-- ORIGINAL -->
+
+            <div class="upload-card">
+
+                <div class="upload-number">
+                    02
+                </div>
+
+                <div class="upload-icon">
+                    ◇
+                </div>
+
+                <h3>
+                    Your Photo
+                </h3>
+
+                <p>
+                    Choose the photo you want
+                    STYLE MIRROR to edit.
+                </p>
+
+                <label
+                    for="originalImage"
+                    class="upload-button">
+                    Choose Image
+                </label>
+
+                <input
+                    type="file"
+                    id="originalImage"
+                    accept="image/*"
+                    hidden>
+
+                <div
+                    id="originalFileName"
+                    class="file-name">
+                    No image selected
+                </div>
+
+            </div>
+
+        </div>
+
+
+        <!-- GENERATE -->
+
+        <div class="generate-area">
+
+            <button
+                id="generateButton"
+                class="generate-button">
+
+                <span>
+                    ✦
+                </span>
+
+                Generate Style
+
+            </button>
+
+            <p
+                id="status"
+                class="status-message">
+            </p>
+
+        </div>
+
+
+        <!-- RESULT -->
+
+        <section
+            id="resultSection"
+            class="result-section hidden">
+
+            <div class="section-label">
+                RESULT
+            </div>
+
+            <div class="comparison-grid">
+
+                <!-- ORIGINAL -->
+
+                <div class="image-panel">
+
+                    <div class="panel-header">
+
+                        <div>
+                            <span class="panel-tag">
+                                ORIGINAL
+                            </span>
+
+                            <h3>
+                                Your photo
+                            </h3>
+                        </div>
+
+                    </div>
+
+                    <div class="image-wrapper">
+
+                        <img
+                            id="originalPreview"
+                            alt="Original image">
+
+                        <div
+                            id="originalEmpty"
+                            class="empty-preview">
+                            Your image will appear here
+                        </div>
+
+                    </div>
+
+                </div>
+
+
+                <!-- RESULT -->
+
+                <div class="image-panel result-panel">
+
+                    <div class="panel-header">
+
+                        <div>
+                            <span class="panel-tag result-tag">
+                                AI RESULT
+                            </span>
+
+                            <h3>
+                                Mirrored style
+                            </h3>
+                        </div>
+
+                    </div>
+
+                    <div class="image-wrapper">
+
+                        <img
+                            id="editedPreview"
+                            alt="Edited image">
+
+                        <div
+                            id="editedEmpty"
+                            class="empty-preview">
+                            Your AI result will appear here
+                        </div>
+
+                    </div>
+
+                </div>
+
+            </div>
+
+
+            <!-- STYLE INFORMATION -->
+
+            <div class="style-information">
+
+                <div class="style-info-header">
+
+                    <div>
+
+                        <span class="section-label">
+                            STYLE PROFILE
+                        </span>
+
+                        <h3>
+                            AI detected aesthetic
+                        </h3>
+
+                    </div>
+
+                    <span class="ai-badge">
+                        ✦ AI ANALYZED
+                    </span>
+
+                </div>
+
+
+                <div class="parameter-grid">
+
+                    <div class="parameter-card">
+                        <span>Lightness</span>
+                        <strong id="lightness">—</strong>
+                    </div>
+
+                    <div class="parameter-card">
+                        <span>Contrast</span>
+                        <strong id="contrast">—</strong>
+                    </div>
+
+                    <div class="parameter-card">
+                        <span>Warmth</span>
+                        <strong id="warmth">—</strong>
+                    </div>
+
+                    <div class="parameter-card">
+                        <span>Saturation</span>
+                        <strong id="saturation">—</strong>
+                    </div>
+
+                    <div class="parameter-card">
+                        <span>Highlight</span>
+                        <strong id="highlight">—</strong>
+                    </div>
+
+                    <div class="parameter-card">
+                        <span>Shadow</span>
+                        <strong id="shadow">—</strong>
+                    </div>
+
+                </div>
+
+            </div>
+
+
+            <!-- ACTIONS -->
+
+            <div class="result-actions">
+
+                <button
+                    id="regenerateButton"
+                    class="secondary-button">
+                    ↻ Regenerate
+                </button>
+
+                <button
+                    id="exportButton"
+                    class="secondary-button">
+                    ↓ Export
+                </button>
+
+            </div>
+
+        </section>
+
+
+        <!-- HISTORY -->
+
+        <section
+            id="history"
+            class="history-section">
+
+            <div class="section-label">
+                HISTORY
+            </div>
+
+            <h2>
+                Your previous creations
+            </h2>
+
+            <div
+                id="historyContainer"
+                class="history-container">
+
+                <div class="empty-history">
+
+                    <div class="empty-history-icon">
+                        ◇
+                    </div>
+
+                    <h3>
+                        No creations yet
+                    </h3>
+
+                    <p>
+                        Your generated styles and projects
+                        will appear here.
+                    </p>
+
+                </div>
+
+            </div>
+
+        </section>
+
+    </main>
+
+
+    <!-- FOOTER -->
+
+    <footer class="footer">
+
+        <div class="footer-brand">
+
+            <div class="brand-icon">
+                ✦
+            </div>
+
+            <div>
+                <strong>
+                    STYLE MIRROR
+                </strong>
+
+                <span>
+                    AI Aesthetic Matching Editor
+                </span>
+            </div>
+
+        </div>
+
+        <p>
+            Create. Mirror. Repeat.
+        </p>
+
+    </footer>
+
+</div>
+
+
+<script src="{% static 'style_mirror/app.js' %}"></script>
+```
+
+</body>
+
+</html>
