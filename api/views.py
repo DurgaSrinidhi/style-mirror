@@ -1,3 +1,6 @@
+import os
+import tempfile
+
 from rest_framework import viewsets
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.exceptions import ValidationError
@@ -27,6 +30,8 @@ from .serializers import (
     FeatureExplanationSerializer,
     RegenerationSerializer,
 )
+
+from .supabase_storage import supabase, BUCKET_NAME
 
 
 # =========================================================
@@ -178,11 +183,168 @@ class UploadedImageViewSet(viewsets.ModelViewSet):
             user=self.request.user
         )
 
-    def perform_create(self, serializer):
+    def create(self, request, *args, **kwargs):
 
-        serializer.save(
-            user=self.request.user
+        uploaded_file = request.FILES.get("image")
+
+        if not uploaded_file:
+
+            return Response(
+                {
+                    "error":
+                    "Please upload an image."
+                },
+                status=400
+            )
+
+        image_type = request.data.get(
+            "image_type",
+            "original"
         )
+
+        if image_type not in [
+            "reference",
+            "original"
+        ]:
+
+            return Response(
+                {
+                    "error":
+                    "Invalid image_type."
+                },
+                status=400
+            )
+
+        # -------------------------------------------------
+        # Save upload temporarily
+        # -------------------------------------------------
+
+        temp_file = tempfile.NamedTemporaryFile(
+            suffix=os.path.splitext(
+                uploaded_file.name
+            )[1] or ".jpg",
+            delete=False
+        )
+
+        temp_path = temp_file.name
+
+        try:
+
+            for chunk in uploaded_file.chunks():
+
+                temp_file.write(chunk)
+
+            temp_file.close()
+
+            # -------------------------------------------------
+            # Generate unique storage path
+            # -------------------------------------------------
+
+            import uuid
+
+            filename = os.path.basename(
+                uploaded_file.name
+            )
+
+            storage_path = (
+                f"uploads/"
+                f"{request.user.supabase_user_id}/"
+                f"{uuid.uuid4().hex}_"
+                f"{filename}"
+            )
+
+            # -------------------------------------------------
+            # Read file
+            # -------------------------------------------------
+
+            with open(
+                temp_path,
+                "rb"
+            ) as file:
+
+                file_data = file.read()
+
+            # -------------------------------------------------
+            # Upload to Supabase
+            # -------------------------------------------------
+
+            supabase.storage.from_(
+                BUCKET_NAME
+            ).upload(
+                storage_path,
+                file_data,
+                {
+                    "content-type":
+                    uploaded_file.content_type
+                    or "image/jpeg",
+
+                    "upsert":
+                    "true",
+                }
+            )
+
+            # -------------------------------------------------
+            # Create database record
+            # -------------------------------------------------
+
+            uploaded_image = UploadedImage.objects.create(
+                user=request.user,
+                image=storage_path,
+                image_type=image_type
+            )
+
+            # -------------------------------------------------
+            # Public URL
+            # -------------------------------------------------
+
+            image_url = (
+                supabase
+                .storage
+                .from_(BUCKET_NAME)
+                .get_public_url(storage_path)
+            )
+
+            return Response(
+                {
+                    "id":
+                    uploaded_image.id,
+
+                    "user":
+                    request.user.id,
+
+                    "image":
+                    image_url,
+
+                    "image_url":
+                    image_url,
+
+                    "image_type":
+                    uploaded_image.image_type,
+
+                    "created_at":
+                    uploaded_image.created_at,
+                },
+                status=201
+            )
+
+        except Exception as e:
+
+            return Response(
+                {
+                    "error":
+                    "Failed to upload image.",
+
+                    "details":
+                    str(e)
+                },
+                status=500
+            )
+
+        finally:
+
+            if os.path.exists(temp_path):
+
+                os.remove(temp_path)
 
 
 # =========================================================
@@ -254,7 +416,6 @@ class RegenerationViewSet(viewsets.ModelViewSet):
             "project"
         )
 
-        # Make sure the project belongs to the logged-in user
         if project.user != self.request.user:
 
             raise ValidationError({
@@ -262,7 +423,6 @@ class RegenerationViewSet(viewsets.ModelViewSet):
                 "You do not own this project."
             })
 
-        # Find the latest generation for this project
         last_generation = (
             Regeneration.objects
             .filter(project=project)
@@ -330,10 +490,13 @@ def history_api(request):
             "regenerations": [
                 {
                     "id": regeneration.id,
+
                     "generation_number":
                         regeneration.generation_number,
+
                     "image_url":
                         regeneration.image_url,
+
                     "created_at":
                         regeneration.created_at,
                 }
@@ -351,10 +514,17 @@ def history_api(request):
         "history":
             history,
     })
+
+
+# =========================================================
+# STYLE MIRROR HOME
+# =========================================================
+
 from django.shortcuts import render
 
 
 def style_mirror_home(request):
+
     return render(
         request,
         "style_mirror/index.html"

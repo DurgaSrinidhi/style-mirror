@@ -1,7 +1,8 @@
 import os
-import cv2
+import tempfile
 
-from django.conf import settings
+import cv2
+import requests
 
 from rest_framework.decorators import api_view, permission_classes
 from rest_framework.permissions import IsAuthenticated
@@ -13,7 +14,67 @@ from .models import (
     Regeneration,
 )
 
+from .supabase_storage import upload_file
+
 from style_editor import apply_style
+
+
+# =========================================================
+# DOWNLOAD IMAGE FROM URL
+# =========================================================
+
+def download_image_from_url(image_url):
+    """
+    Download an image from a URL into a temporary local file.
+    OpenCV needs a local file to process the image.
+    """
+
+    response = requests.get(
+        image_url,
+        timeout=60
+    )
+
+    response.raise_for_status()
+
+    temp_file = tempfile.NamedTemporaryFile(
+        suffix=".jpg",
+        delete=False
+    )
+
+    temp_file.write(response.content)
+    temp_file.close()
+
+    return temp_file.name
+
+
+# =========================================================
+# SAVE OPENCV IMAGE TO TEMP FILE
+# =========================================================
+
+def save_opencv_image_to_temp(image):
+    """
+    Save an OpenCV image into a temporary JPEG file.
+    """
+
+    temp_file = tempfile.NamedTemporaryFile(
+        suffix=".jpg",
+        delete=False
+    )
+
+    temp_path = temp_file.name
+    temp_file.close()
+
+    success = cv2.imwrite(
+        temp_path,
+        image
+    )
+
+    if not success:
+        raise RuntimeError(
+            "Failed to save processed image."
+        )
+
+    return temp_path
 
 
 # =========================================================
@@ -27,123 +88,203 @@ def apply_style_api(request):
     profile_id = request.data.get("profile_id")
     project_id = request.data.get("project_id")
 
+    # -----------------------------------------------------
+    # Validate profile ID
+    # -----------------------------------------------------
+
     if not profile_id:
+
         return Response(
-            {"error": "profile_id is required."},
+            {
+                "error":
+                "profile_id is required."
+            },
             status=400
         )
+
+    # -----------------------------------------------------
+    # Validate project ID
+    # -----------------------------------------------------
 
     if not project_id:
+
         return Response(
-            {"error": "project_id is required."},
+            {
+                "error":
+                "project_id is required."
+            },
             status=400
         )
 
+    # -----------------------------------------------------
+    # Get editing profile
+    # -----------------------------------------------------
+
     try:
+
         profile = EditingProfile.objects.get(
             id=profile_id,
             user=request.user
         )
+
     except EditingProfile.DoesNotExist:
+
         return Response(
-            {"error": "Editing profile not found."},
+            {
+                "error":
+                "Editing profile not found."
+            },
             status=404
         )
 
+    # -----------------------------------------------------
+    # Get project
+    # -----------------------------------------------------
+
     try:
+
         project = Project.objects.get(
             id=project_id,
             user=request.user
         )
+
     except Project.DoesNotExist:
+
         return Response(
-            {"error": "Project not found."},
+            {
+                "error":
+                "Project not found."
+            },
             status=404
         )
+
+    # -----------------------------------------------------
+    # Check original image
+    # -----------------------------------------------------
 
     if not project.original_image_url:
+
         return Response(
-            {"error": "Project does not have an original image."},
+            {
+                "error":
+                "Project does not have an original image."
+            },
             status=400
         )
 
-    image_url = project.original_image_url
-
-    media_prefix = "/media/"
-
-    if media_prefix not in image_url:
-        return Response(
-            {"error": "Invalid image URL."},
-            status=400
-        )
-
-    relative_path = image_url.split(
-        media_prefix,
-        1
-    )[1]
-
-    image_path = os.path.join(
-        settings.MEDIA_ROOT,
-        relative_path
-    )
-
-    if not os.path.exists(image_path):
-        return Response(
-            {"error": "Original image file not found."},
-            status=404
-        )
-
-    profile_data = {
-        "lightness": profile.lightness,
-        "contrast": profile.contrast,
-        "warmth": profile.warmth,
-        "tint": profile.tint,
-        "saturation": profile.saturation,
-        "highlight": profile.highlight,
-        "shadow": profile.shadow,
-        "hue": profile.hue,
-    }
+    image_path = None
+    output_path = None
 
     try:
+
+        # -------------------------------------------------
+        # Download original image
+        # -------------------------------------------------
+
+        image_path = download_image_from_url(
+            project.original_image_url
+        )
+
+        # -------------------------------------------------
+        # Editing profile values
+        # -------------------------------------------------
+
+        profile_data = {
+
+            "lightness":
+            profile.lightness,
+
+            "contrast":
+            profile.contrast,
+
+            "warmth":
+            profile.warmth,
+
+            "tint":
+            profile.tint,
+
+            "saturation":
+            profile.saturation,
+
+            "highlight":
+            profile.highlight,
+
+            "shadow":
+            profile.shadow,
+
+            "hue":
+            profile.hue,
+        }
+
+        # -------------------------------------------------
+        # Apply STYLE MIRROR editing
+        # -------------------------------------------------
+
         edited_image = apply_style(
             image_path,
             profile_data
         )
-    except Exception as e:
+
+        # -------------------------------------------------
+        # Save result temporarily
+        # -------------------------------------------------
+
+        output_path = save_opencv_image_to_temp(
+            edited_image
+        )
+
+        # -------------------------------------------------
+        # Upload edited image to Supabase
+        # -------------------------------------------------
+
+        edited_image_url = upload_file(
+            output_path,
+            folder="edited"
+        )
+
+    except requests.RequestException as e:
+
         return Response(
             {
-                "error": "Failed to apply style.",
-                "details": str(e)
+                "error":
+                "Could not download the original image.",
+
+                "details":
+                str(e)
             },
             status=500
         )
 
-    output_filename = (
-        f"edited_project_{project.id}.jpg"
-    )
+    except Exception as e:
 
-    output_path = os.path.join(
-        settings.MEDIA_ROOT,
-        output_filename
-    )
-
-    success = cv2.imwrite(
-        output_path,
-        edited_image
-    )
-
-    if not success:
         return Response(
-            {"error": "Failed to save edited image."},
+            {
+                "error":
+                "Failed to apply style.",
+
+                "details":
+                str(e)
+            },
             status=500
         )
 
-    edited_image_url = (
-        request.build_absolute_uri(
-            settings.MEDIA_URL +
-            output_filename
-        )
-    )
+    finally:
+
+        # -------------------------------------------------
+        # Remove temporary files
+        # -------------------------------------------------
+
+        if image_path and os.path.exists(image_path):
+
+            os.remove(image_path)
+
+        if output_path and os.path.exists(output_path):
+
+            os.remove(output_path)
+
+    # -----------------------------------------------------
+    # Save Supabase URL in database
+    # -----------------------------------------------------
 
     project.edited_image_url = edited_image_url
 
@@ -153,12 +294,26 @@ def apply_style_api(request):
         ]
     )
 
+    # -----------------------------------------------------
+    # Response
+    # -----------------------------------------------------
+
     return Response({
-        "message": "Style applied successfully.",
-        "project_id": project.id,
-        "profile_id": profile.id,
-        "original_image_url": project.original_image_url,
-        "edited_image_url": edited_image_url
+
+        "message":
+        "Style applied successfully.",
+
+        "project_id":
+        project.id,
+
+        "profile_id":
+        profile.id,
+
+        "original_image_url":
+        project.original_image_url,
+
+        "edited_image_url":
+        edited_image_url
     })
 
 
@@ -219,86 +374,89 @@ def regenerate_api(request, project_id):
             status=400
         )
 
-    # -----------------------------------------------------
-    # Convert image URL to local file path
-    # -----------------------------------------------------
-
-    image_url = project.original_image_url
-
-    media_prefix = "/media/"
-
-    if media_prefix not in image_url:
-
-        return Response(
-            {
-                "error":
-                "Invalid original image URL."
-            },
-            status=400
-        )
-
-    relative_path = image_url.split(
-        media_prefix,
-        1
-    )[1]
-
-    image_path = os.path.join(
-        settings.MEDIA_ROOT,
-        relative_path
-    )
-
-    if not os.path.exists(image_path):
-
-        return Response(
-            {
-                "error":
-                "Original image file not found."
-            },
-            status=404
-        )
-
-    # -----------------------------------------------------
-    # Get editing profile
-    # -----------------------------------------------------
-
-    profile = project.editing_profile
-
-    profile_data = {
-
-        "lightness":
-        profile.lightness,
-
-        "contrast":
-        profile.contrast,
-
-        "warmth":
-        profile.warmth,
-
-        "tint":
-        profile.tint,
-
-        "saturation":
-        profile.saturation,
-
-        "highlight":
-        profile.highlight,
-
-        "shadow":
-        profile.shadow,
-
-        "hue":
-        profile.hue,
-    }
-
-    # -----------------------------------------------------
-    # Apply style again
-    # -----------------------------------------------------
+    image_path = None
+    output_path = None
 
     try:
+
+        # -------------------------------------------------
+        # Download original image
+        # -------------------------------------------------
+
+        image_path = download_image_from_url(
+            project.original_image_url
+        )
+
+        # -------------------------------------------------
+        # Get editing profile
+        # -------------------------------------------------
+
+        profile = project.editing_profile
+
+        profile_data = {
+
+            "lightness":
+            profile.lightness,
+
+            "contrast":
+            profile.contrast,
+
+            "warmth":
+            profile.warmth,
+
+            "tint":
+            profile.tint,
+
+            "saturation":
+            profile.saturation,
+
+            "highlight":
+            profile.highlight,
+
+            "shadow":
+            profile.shadow,
+
+            "hue":
+            profile.hue,
+        }
+
+        # -------------------------------------------------
+        # Apply style again
+        # -------------------------------------------------
 
         regenerated_image = apply_style(
             image_path,
             profile_data
+        )
+
+        # -------------------------------------------------
+        # Save regenerated image temporarily
+        # -------------------------------------------------
+
+        output_path = save_opencv_image_to_temp(
+            regenerated_image
+        )
+
+        # -------------------------------------------------
+        # Upload to Supabase
+        # -------------------------------------------------
+
+        regenerated_image_url = upload_file(
+            output_path,
+            folder="regenerated"
+        )
+
+    except requests.RequestException as e:
+
+        return Response(
+            {
+                "error":
+                "Could not download the original image.",
+
+                "details":
+                str(e)
+            },
+            status=500
         )
 
     except Exception as e:
@@ -313,6 +471,20 @@ def regenerate_api(request, project_id):
             },
             status=500
         )
+
+    finally:
+
+        # -------------------------------------------------
+        # Remove temporary files
+        # -------------------------------------------------
+
+        if image_path and os.path.exists(image_path):
+
+            os.remove(image_path)
+
+        if output_path and os.path.exists(output_path):
+
+            os.remove(output_path)
 
     # -----------------------------------------------------
     # Find next generation number
@@ -338,48 +510,6 @@ def regenerate_api(request, project_id):
     else:
 
         generation_number = 1
-
-    # -----------------------------------------------------
-    # Save regenerated image
-    # -----------------------------------------------------
-
-    output_filename = (
-        f"regenerated_project_"
-        f"{project.id}_"
-        f"generation_"
-        f"{generation_number}.jpg"
-    )
-
-    output_path = os.path.join(
-        settings.MEDIA_ROOT,
-        output_filename
-    )
-
-    success = cv2.imwrite(
-        output_path,
-        regenerated_image
-    )
-
-    if not success:
-
-        return Response(
-            {
-                "error":
-                "Failed to save regenerated image."
-            },
-            status=500
-        )
-
-    # -----------------------------------------------------
-    # Create URL
-    # -----------------------------------------------------
-
-    regenerated_image_url = (
-        request.build_absolute_uri(
-            settings.MEDIA_URL +
-            output_filename
-        )
-    )
 
     # -----------------------------------------------------
     # Save regeneration in database

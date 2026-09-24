@@ -12,6 +12,8 @@ from .models import (
     Regeneration,
 )
 
+from .supabase_storage import supabase, BUCKET_NAME
+
 
 # =========================================================
 # USER PROFILE
@@ -105,15 +107,43 @@ class ExportSerializer(serializers.ModelSerializer):
 
 class UploadedImageSerializer(serializers.ModelSerializer):
 
+    image_url = serializers.SerializerMethodField()
+
     class Meta:
         model = UploadedImage
-        fields = "__all__"
+
+        fields = [
+            "id",
+            "user",
+            "image",
+            "image_url",
+            "image_type",
+            "created_at",
+        ]
 
         read_only_fields = [
             "id",
             "user",
+            "image_url",
             "created_at",
         ]
+
+    def get_image_url(self, obj):
+
+        if not obj.image:
+            return None
+
+        image_path = obj.image.name
+
+        if not image_path:
+            return None
+
+        return (
+            supabase
+            .storage
+            .from_(BUCKET_NAME)
+            .get_public_url(image_path)
+        )
 
 
 # =========================================================
